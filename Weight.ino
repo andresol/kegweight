@@ -1,16 +1,9 @@
 
 /*
-  LiquidCrystal Library - Hello World
-
- Demonstrates the use a 16x2 LCD display.  The LiquidCrystal
- library works with all LCD displays that are compatible with the
- Hitachi HD44780 driver. There are many of them out there, and you
- can usually tell them by the 16-pin interface.
-
- Hx711.DOUT - pin #A1
- Hx711.SCK  - pin #A2
-
- This example code is in the public domain.
+ *
+ * Hx711.DOUT - pin #A1
+ * Hx711.SCK  - pin #A2
+ *
  * LCD RS pin to digital pin 13
  * LCD Enable pin to digital pin 12
  * LCD D4 pin to digital pin 8
@@ -21,7 +14,6 @@
  * 10K resistor:
  * ends to +5V and ground
  * wiper to LCD VO pin (pin 3)
- http://www.arduino.cc/en/Tutorial/LiquidCrystal
  */
 
 // include the library code:
@@ -41,6 +33,7 @@
 #define DEFAULT_EMPTY_VALUE 8237827
 #define BAUD_RATE 9600
 
+// Not in use. May be used in the future.
 int EEPROM_ADDR = 0;
 
 // initialize the library with the numbers of the interface pins
