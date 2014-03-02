@@ -1,9 +1,11 @@
 kegweight
 =========
 
-Arduino + HX711 + Weight sensor for monitoring how much beer there is in the keg.
+Arduino + HX711 + Weight sensor for monitoring how much beer there is in the keg. C
 
-Library used is the https://github.com/bogde/HX711 library.
+It is now possible to use it with [Kegerface](https://github.com/andresol/kegerface) and the hacky Weight_kegerface.py script.
+
+Library used is the [HX711](https://github.com/bogde/HX711) library.
 
 
 It is important to find and define det #define DEFAULT_EMPTY_VALUE 8237827. It represent the value of the weight when it is empty.   
