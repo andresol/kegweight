@@ -40,8 +40,8 @@
 int EEPROM_ADDR = 0;
 
 // initialize the library with the numbers of the interface pins
-LiquidCrystal lcd(13, 12, 8, 9, 10, 11); //PROD
-//LiquidCrystal lcd(8, 9, 4, 5, 6, 7); //DEBUG
+//LiquidCrystal lcd(13, 12, 8, 9, 10, 11); //PROD
+LiquidCrystal lcd(8, 9, 4, 5, 6, 7); //DEBUG
 
 HX711 scales[WEIGHT_SENSORS] = {HX711 (A1, A2)};
 
@@ -112,8 +112,8 @@ void doWeigth(int value) {
         lcd.setCursor(0, 1);
         String beers = String("Beers:");
         char numberOfBeers[4];
-        dtostrf(((value - KEG_WEIGHT) / TAP_SIZE), 1, 0, numberOfBeers);
-        lcd.print(beers + numberOfBeers);
+        dtostrf(((value - KEG_WEIGHT) / (TAP_SIZE)), 1, 0, numberOfBeers);
+        lcd.print(beers + numberOfBeers + " (3.3)");
       }
       delay(50);
       scales[i].power_down();	// put the ADC in sleep mode
