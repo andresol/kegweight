@@ -1,19 +1,20 @@
 #!/bin/sh
 
 ### BEGIN INIT INFO
-# Provides:          Integration with webservice
+# Provides:          Integration between kegweight and kegerface
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Fast deamon to copy the serial into a webservice.
-# Description:       Just copy the serial from arduino serial to a webservice.
+# Short-Description: Integration between kegweight and kegerface
+# Description:       A integration between the arduino kegweight and a kegerface. It starts and stops the
+# 					 script that takes the output from serial "V1:13213" and insert it into the kegerfaces beers.csv file.
 ### END INIT INFO
  
 # Change the next 3 lines to suit where you install your script and what you want to call it
 DIR=/opt/weight
-DAEMON=$DIR/Weight.py
-DAEMON_NAME=Weight
+DAEMON=$DIR/Weight_Kegerface.py
+DAEMON_NAME=weight_kegerface
  
 # This next line determines what user the script runs as.
 # Root generally not recommended but necessary if you are using the Raspberry Pi GPIO from Python.
