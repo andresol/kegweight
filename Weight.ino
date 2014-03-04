@@ -30,7 +30,7 @@
 #define DELAY 100
 #define DEFAULT_WEIGHT_TIME 300
 #define DEFAULT_WEIGHT_PRINT_TIME 5000
-#define DEFAULT_EMPTY_VALUE 8237827
+#define DEFAULT_EMPTY_VALUE 8236505
 #define BAUD_RATE 9600
 #define KILO 1000
 #define TAP_SIZE 330
@@ -57,7 +57,7 @@ void setup() {
   lcd.begin(16, 2);
   lcd.print("Starting....");
   for (int i = 0; i < WEIGHT_SENSORS; i++) {
-    scales[i].set_scale(2280.f);
+    scales[i].set_scale(-228.f);
     scales[i].tare();
     delay(DELAY);
     if (USE_EEPROM) {
@@ -77,7 +77,7 @@ String getName(const int i) {
 }
 
 float getValue(HX711 scale) {
-  float value = scale.get_units(10) * -10;
+  float value = scale.get_units(10);
   if (value > -10 && value < 10)  {
     value = 0;
   }
