@@ -81,6 +81,7 @@ float getValue(HX711 scale) {
   if (value > -10 && value < 10)  {
     value = 0;
   }
+  return value;
 }
 
 void printToSerial(const float value, const unsigned long now, String& weightName) {
@@ -122,7 +123,7 @@ void getWeight(const float value, char* buffer) {
 }
 
 void printWeightOnLCD(const float value, String weightName) {
-  char* weight = new char[6];
+  char* weight = new char[7];
   getWeight(value, weight);
 
   if (WEIGHT_SENSORS > 2) {
