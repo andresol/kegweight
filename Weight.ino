@@ -43,7 +43,6 @@
 // initialize the library with the numbers of the interface pins
 //LiquidCrystal lcd(13, 12, 8, 9, 10, 11); //PROD
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7); //DEBUG
-
 HX711 scales[WEIGHT_SENSORS] = {
   HX711 (A1, A2)};
 
@@ -77,7 +76,7 @@ String getName(const int i) {
 }
 
 float getValue(HX711 scale) {
-  float value = scale.get_units(10);
+  float value = scale.get_units(10) ;
   if (value > -10 && value < 10)  {
     value = 0;
   }
