@@ -35,86 +35,135 @@
 #define KILO 1000
 #define TAP_SIZE 330
 #define KEG_WEIGHT 4000
+#define USE_EEPROM 0
 
 // Not in use. May be used in the future.
-int EEPROM_ADDR = 0;
+//int EEPROM_ADDR = 0;
 
 // initialize the library with the numbers of the interface pins
 //LiquidCrystal lcd(13, 12, 8, 9, 10, 11); //PROD
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7); //DEBUG
 
-HX711 scales[WEIGHT_SENSORS] = {HX711 (A1, A2)};
+HX711 scales[WEIGHT_SENSORS] = {
+  HX711 (A1, A2)};
 
 unsigned long last = 0;
 unsigned long lastPrint = 0;
+const String kilo = "kg";
+
 
 void setup() {
   Serial.begin(BAUD_RATE);
   lcd.begin(16, 2);
   lcd.print("Starting....");
-  
   for (int i = 0; i < WEIGHT_SENSORS; i++) {
     scales[i].set_scale(2280.f);
     scales[i].tare();
-    delay(DELAY);		      
-    scales[i].set_offset(DEFAULT_EMPTY_VALUE);
+    delay(DELAY);
+    if (USE_EEPROM) {
+      scales[i].set_offset(DEFAULT_EMPTY_VALUE);//TODO: use eeprom. 
+    } 
+    else {
+      scales[i].set_offset(DEFAULT_EMPTY_VALUE);
+    }
   }
   lcd.clear();
 }
 
+String getName(const int i) {
+  String weightName = String("V");
+  weightName = weightName + (i + 1) + ":";
+  return weightName;
+}
+
+float getValue(HX711 scale) {
+  float value = scale.get_units(10) * -10;
+  if (value > -10 && value < 10)  {
+    value = 0;
+  }
+}
+
+void printToSerial(const float value, const unsigned long now, String& weightName) {
+  if ((lastPrint + DEFAULT_WEIGHT_PRINT_TIME) < now) {
+    Serial.print(weightName);
+    Serial.println(value, 1);
+    lastPrint = now;
+  }
+}
+
+int getRow(const int i) {
+  return i % 2;
+} 
+
+int getCol(const int i) {
+  int col = 0;
+  if (i > 1) {
+    col = 9;
+  }
+  return col;
+}
+
+void getWeight(const float value, char* buffer) {
+  int decimals = 0;
+  if (value > KILO * 10 || (KILO * -10) < value) {
+    if (WEIGHT_SENSORS > 2) {
+      decimals = 1; 
+    } else {
+      decimals = 3; 
+    }
+  } else {
+    if (WEIGHT_SENSORS > 2) {
+      decimals = 0; 
+    } else {
+      decimals = 2;
+    }
+  }
+  dtostrf((value / KILO), 1, decimals, buffer);
+}
+
+void printWeightOnLCD(const float value, String weightName) {
+  char* weight = new char[6];
+  getWeight(value, weight);
+
+  if (WEIGHT_SENSORS > 2) {
+    lcd.print(weight + kilo);
+  } else {
+    if (WEIGHT_SENSORS == 1) {
+      lcd.print(weightName + weight + kilo);
+      lcd.setCursor(0, 1);
+      String beers = String("Beers:");
+      char numberOfBeers[4];
+      dtostrf(((value - KEG_WEIGHT) / (TAP_SIZE)), 1, 0, numberOfBeers);
+      lcd.print(beers + numberOfBeers + " (0.33)");
+    } else {
+      char numberOfBeers[4];
+      dtostrf(((value - KEG_WEIGHT) / (TAP_SIZE)), 1, 0, numberOfBeers);
+      lcd.print(weightName + weight + kilo + " (" + numberOfBeers +")");
+    }
+  }
+  
+  delete weight;
+}
 
 void doWeigth(int value) {
   unsigned long now = millis();
 
   if ((last + DEFAULT_WEIGHT_TIME) < now) {
     for (int i = 0; i < WEIGHT_SENSORS; i++) {
-      String weightName = String("V");
-      weightName = weightName + (i + 1) + ":";
       scales[i].power_up();
       lcd.setCursor(0, 1);
-      float value = scales[i].get_units(10) * -10;
-      if (value > -10 && value < 10)  {
-        value = 0;
-      }
-      
-      if ((lastPrint + DEFAULT_WEIGHT_PRINT_TIME) < now) {
-         Serial.print(weightName);
-         Serial.println(value, 1);
-         lastPrint = now;
-      }
-      int row = i % 2;
-      int col = 0;
-      if (i > 1) {
-        col = 9;
-      } 
+
+      String weightName = getName(i);
+      float value = getValue(scales[i]);
+
+      printToSerial(value, now, weightName);
+
+      const int row = getRow(i);
+      const int col = getCol(i);
       lcd.setCursor(col, row);
-      char weight[8];
-      String kilo = "kg";
-      if (value > KILO * 10 || (KILO * -10) < value) {
-         if (WEIGHT_SENSORS > 2) {
-          dtostrf((value / KILO), 1, 1, weight);  
-        } else {
-          dtostrf((value / KILO), 1, 3, weight); 
-        }
-      } else {
-        if (WEIGHT_SENSORS > 2) {
-          dtostrf((value / KILO), 1, 0, weight);  
-        } else {
-          dtostrf((value / KILO), 1, 2, weight); 
-        }
-      }
-      if (WEIGHT_SENSORS > 2) {
-        lcd.print(weight + kilo);
-      } else {
-        lcd.print(weightName + weight + kilo);
-      }
-      if (WEIGHT_SENSORS == 1 && value > 0) {
-        lcd.setCursor(0, 1);
-        String beers = String("Beers:");
-        char numberOfBeers[4];
-        dtostrf(((value - KEG_WEIGHT) / (TAP_SIZE)), 1, 0, numberOfBeers);
-        lcd.print(beers + numberOfBeers + " (3.3)");
-      }
+      
+      printWeightOnLCD(value, weightName);
+
       delay(50);
       scales[i].power_down();	// put the ADC in sleep mode
       last = millis();
@@ -126,4 +175,7 @@ void loop() {
   doWeigth(0);
   delay(2);
 }
+
+
+
 
