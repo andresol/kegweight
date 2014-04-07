@@ -73,10 +73,16 @@ unsigned long debounceTime = 0;
 float lastValue = 0;
 unsigned int useFastWeight = 0;
 
+//MENU
+char* EMPTY = "                ";
+char* menu[] = {"Calibrate       " ,"Tare           "};
+unsigned int lastItem = 1;
+unsigned int menuMarker = 0;
+
+
 //GUI VARIABLES
 unsigned int printGUI = 0;
-unsigned int menuMarker = 0;
-unsigned int lastItem = 1;
+
 
 void setup() {
   Serial.begin(BAUD_RATE);
@@ -280,11 +286,25 @@ void printMenu() {
   if (!printGUI){
     return;
   }
-  printMenuMarker(menuMarker % 2);
-  lcd.setCursor(1, 0);
-  lcd.print("Calibrate       ");
-  lcd.setCursor(1, 1);
-  lcd.print("Tare       ");
+  int up = menuMarker % 2;
+  printMenuMarker(up);
+  if (!up) {
+    lcd.setCursor(1, 0);
+    lcd.print(menu[menuMarker]);
+    if (menuMarker < lastItem) {
+      lcd.setCursor(1, 1);
+      lcd.print(menu[menuMarker + 1]);
+    } else {
+      lcd.setCursor(1, 1);
+      lcd.print(EMPTY);
+    }
+  } else {
+    lcd.setCursor(1, 0);
+    lcd.print(menu[menuMarker - 1]);
+    lcd.setCursor(1, 1);
+    lcd.print(menu[menuMarker]);
+  }
+  
 }
 
 void doTare() {
