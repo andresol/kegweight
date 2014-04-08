@@ -8,20 +8,23 @@ Arduino + HX711 + Weight sensor + Kegerface for monitoring how much beer there i
 It is now possible to use it with [Kegerface](https://github.com/andresol/kegerface) and the Weight_kegerface.py script.  
 ![ScreenShot2](screenshot2.jpg "Kegerface")
 
-Library used is the [HX711](https://github.com/bogde/HX711) library.
+Library used is the [HX711](https://github.com/bogde/HX711) library and https://github.com/thijse/Arduino-Libraries/tree/master/EEPROMEx
 
-It is important to find and define the #define DEFAULT_EMPTY_VALUE 8237827. It represent the value of the weight when it is empty.   
+What you need?
+1. One Arduino of course.
+2. Arduino lcd keypad shield.
+3. One or more HX711 (ACD).
+4. One or more Loadcell. It only supports 4.
 
-I find the value printing the value of scales[0].read_average(10) after  
-scales[0].tare();  
-delay(DELAY);  
-in setup when the weight is empty. 
+Important!!
+
+Before using the weight it needs to be calibrated. Calibrate by hitting the select button->Calibrate. 
 
 This step only needs to be done only one time.
 
 GUIDE: (Needs Arduino, Arduino LCD screen, HX711, Raspberry PI/linux server and a weight).  
-1. Install the Weight.ino on a arduino.  
-2. Calibrate the arduino so that the #define DEFAULT_EMPTY_VALUE is correct.  
+1. Install the Weight.ino on a arduino. You may need to change the   
+2. Calibrate the arduino by pressing select->Calibrate.  
 3. Install the weight init.d service. Needs to replace DAEMON=$DIR/Weight.py to Weight_Kegerface.py. (update-rc.d weight defaults)  
 4. Install the Weight_Kegerface.py into a folder. E.g /opt/weight/  
 5. Install the [Kegerface](https://github.com/andresol/kegerface) into e.g /usr/share/nginx/html  
