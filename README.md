@@ -10,11 +10,11 @@ It is now possible to use it with [Kegerface](https://github.com/andresol/kegerf
 
 Library used is the [HX711](https://github.com/bogde/HX711) library and [EEPROMEx] (https://github.com/thijse/Arduino-Libraries/tree/master/EEPROMEx)
 
-What you need?
-1. One Arduino of course. 
-2. Arduino lcd keypad shield. 
-3. One or more HX711 (ACD). 
-4. One or more Loadcell. It only supports 4. 
+What you need?  
+1. One Arduino of course.  
+2. Arduino lcd keypad shield.  
+3. One or more HX711 (ACD).  
+4. One or more Loadcell. It only supports 4.  
 
 Important!!
 
