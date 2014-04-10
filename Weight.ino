@@ -24,10 +24,10 @@
 #include <EEPROMex.h>
 #include <EEPROMVar.h> //https://github.com/thijse/Arduino-Libraries/tree/master/EEPROMEx
 
-#define DEBUG 1
-#define TEST 1
+#define DEBUG 0
+#define TEST 0
 
-#define WEIGHT_SENSORS 1
+#define WEIGHT_SENSORS 2
 #define DELAY 100
 #define DEFAULT_WEIGHT_TIME 1000
 #define DEFAULT_WEIGHT_TIME_FAST 50
@@ -47,19 +47,16 @@
 
 #define BUTTON_PIN   0
 
-// Not in use. May be used in the future.
-//int EEPROM_ADDR = 0;
-
 // initialize the library with the numbers of the interface pins
 //LiquidCrystal lcd(13, 12, 8, 9, 10, 11); //PROD
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7); //DEBUG
-HX711 scales[WEIGHT_SENSORS] = {
-  HX711 (A1, A2)}; //A1 = ANALOG1 = DT // A2=SCK
+HX711 scales[] = {
+  HX711 (A1, A2), HX711 (A3, A4)}; //A1 = ANALOG1 = DT // A2=SCK
 int eepromAddress[WEIGHT_SENSORS] = {0};
 
 unsigned long last = 0;
 unsigned long lastPrint = 0;
-const String kilo = "kg   ";
+const String kilo = "kg";
 
 // KEY VARIABLES
 int lcd_key = btnNONE;
@@ -75,14 +72,12 @@ unsigned int useFastWeight = 0;
 
 //MENU
 char* EMPTY = "                ";
-char* menu[] = {"Calibrate       " ,"Tare           "};
-unsigned int lastItem = 1;
+char* menu[] = {"Calibrate       " ,"Tare           ", "Beersize       "};
+unsigned int lastItem = 0;
 unsigned int menuMarker = 0;
-
 
 //GUI VARIABLES
 unsigned int printGUI = 0;
-
 
 void setup() {
   Serial.begin(BAUD_RATE);
@@ -101,7 +96,6 @@ void setup() {
   }
   lcd.clear();
 }
-
 
 // read the buttons
 int read_LCD_buttons() {
@@ -159,6 +153,26 @@ float getValue(HX711 scale) {
   return value;
 }
 
+char* safeLCDString(const char* src) {
+  return safeLCDString(16, src);
+}
+
+char* safeLCDString(const int length, const char* src) {
+  char result[length];
+  for(int i = 0; i < length ; i++) {
+    result[i] = 'd';
+  }
+  //strncpy(result, src, sizeof(src));
+  for(int i = 0; i < length ; i++) {
+    if (result[i] == '\0') {
+      result[i] = ' ';
+    }
+  }
+  result[length - 1] = '\0';
+  Serial.println(result);
+  return result;
+}
+
 void printToSerial(const float value, const unsigned long now, String& weightName) {
   if ((lastPrint + DEFAULT_WEIGHT_PRINT_TIME) < now || ((useFastWeight && (last + DEFAULT_WEIGHT_TIME_FAST) < now))) {
     Serial.print(weightName);
@@ -185,7 +199,11 @@ void getWeight(const float value, char* buffer) {
     if (WEIGHT_SENSORS > 2) {
       decimals = 1; 
     } else {
-      decimals = 3; 
+      if (value < 0) {
+        decimals = 2; 
+      } else {
+        decimals = 3; 
+      }
     }
   } else {
     if (WEIGHT_SENSORS > 2) {
@@ -208,7 +226,7 @@ void printWeightOnLCD(const float value, String weightName) {
     lcd.print(weight + kilo);
   } else {
     if (WEIGHT_SENSORS == 1) {
-      lcd.print(weightName + weight + kilo);
+      lcd.print(weightName + weight + kilo + "   ");
       lcd.setCursor(0, 1);
       String beers = String("Beers:");
       char numberOfBeers[4];
@@ -236,12 +254,7 @@ void doWeigth() {
       String weightName = getName(i);
       float value = getValue(scales[i]);
       
-#if defined(DEBUG)
-         Serial.print("Value:");
-         Serial.print(value);
-         Serial.print(" LastValue:");
-         Serial.print(lastValue);
-#endif
+
       if ((value > (lastValue + 50)) || (value < (lastValue - 50))) {
         useFastWeight = 1;
         lastValue = value;
@@ -249,10 +262,6 @@ void doWeigth() {
         useFastWeight = 0;
       }
       
-#if defined(DEBUG)
-         Serial.print(" Using FastWeight:");
-         Serial.println(useFastWeight);
-#endif
       printToSerial(value, now, weightName);
 
       const int row = getRow(i);
