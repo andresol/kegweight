@@ -48,8 +48,8 @@
 #define BUTTON_PIN   0
 
 // initialize the library with the numbers of the interface pins
-LiquidCrystal lcd(13, 12, 8, 9, 10, 11); //PROD
-//LiquidCrystal lcd(8, 9, 4, 5, 6, 7); //DEBUG
+//LiquidCrystal lcd(13, 12, 8, 9, 10, 11); //DEBUG
+LiquidCrystal lcd(8, 9, 4, 5, 6, 7); //PROD
 HX711 scales[] = {
   HX711 (A1, A2), HX711 (A3, A4)}; //A1 = ANALOG1 = DT // A2=SCK
 int eepromAddress[WEIGHT_SENSORS] = {0};
