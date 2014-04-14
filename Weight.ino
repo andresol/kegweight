@@ -48,14 +48,14 @@
 #define BUTTON_PIN   0
 
 // initialize the library with the numbers of the interface pins
-//LiquidCrystal lcd(13, 12, 8, 9, 10, 11); //PROD
-LiquidCrystal lcd(8, 9, 4, 5, 6, 7); //DEBUG
+LiquidCrystal lcd(13, 12, 8, 9, 10, 11); //PROD
+//LiquidCrystal lcd(8, 9, 4, 5, 6, 7); //DEBUG
 HX711 scales[] = {
   HX711 (A1, A2), HX711 (A3, A4)}; //A1 = ANALOG1 = DT // A2=SCK
 int eepromAddress[WEIGHT_SENSORS] = {0};
 
-unsigned long last = 0;
-unsigned long lastPrint = 0;
+unsigned long last[WEIGHT_SENSORS];
+unsigned long lastPrint[WEIGHT_SENSORS];
 const String kilo = "kg";
 
 // KEY VARIABLES
@@ -67,13 +67,13 @@ int buttonPressed = 0;
 unsigned long debounceTime = 0;
 
 // WEIGHT VARIABLES
-float lastValue = 0;
+float lastValue[WEIGHT_SENSORS];
 unsigned int useFastWeight = 0;
 
 //MENU
 char* EMPTY = "                ";
 char* menu[] = {"Calibrate       " ,"Tare           ", "Beersize       "};
-unsigned int lastItem = 0;
+unsigned int lastItem = 1;
 unsigned int menuMarker = 0;
 
 //GUI VARIABLES
@@ -83,9 +83,12 @@ void setup() {
   Serial.begin(BAUD_RATE);
  
   lcd.begin(16, 2);
-  lcd.print("Starting....");
+  lcd.print("Starting...");
   for (int i = 0; i < WEIGHT_SENSORS; i++) {
     //scales[i].set_scale(-228.f);
+    lastValue[i] = 0;
+    last[i] = 0;
+    lastPrint[i] = 0;
     scales[i].set_scale(228.f);
     scales[i].tare();
     delay(DELAY);
@@ -153,31 +156,11 @@ float getValue(HX711 scale) {
   return value;
 }
 
-char* safeLCDString(const char* src) {
-  return safeLCDString(16, src);
-}
-
-char* safeLCDString(const int length, const char* src) {
-  char result[length];
-  for(int i = 0; i < length ; i++) {
-    result[i] = 'd';
-  }
-  //strncpy(result, src, sizeof(src));
-  for(int i = 0; i < length ; i++) {
-    if (result[i] == '\0') {
-      result[i] = ' ';
-    }
-  }
-  result[length - 1] = '\0';
-  Serial.println(result);
-  return result;
-}
-
-void printToSerial(const float value, const unsigned long now, String& weightName) {
-  if ((lastPrint + DEFAULT_WEIGHT_PRINT_TIME) < now || ((useFastWeight && (last + DEFAULT_WEIGHT_TIME_FAST) < now))) {
+void printToSerial(const float value, const unsigned long now, String& weightName, const int i) {
+  if ((lastPrint[i] + DEFAULT_WEIGHT_PRINT_TIME) < now || ((useFastWeight && (last[i] + DEFAULT_WEIGHT_TIME_FAST) < now))) {
     Serial.print(weightName);
     Serial.println(value, 1);
-    lastPrint = now;
+    lastPrint[i] = now;
   }
 }
 
@@ -247,22 +230,22 @@ void doWeigth() {
     return;
   }
   unsigned long now = millis();
-  if (((last + DEFAULT_WEIGHT_TIME) < now) || ((useFastWeight && (last + DEFAULT_WEIGHT_TIME_FAST) < now))) {
+  
     for (int i = 0; i < WEIGHT_SENSORS; i++) {
+      if (((last[i] + DEFAULT_WEIGHT_TIME) < now) || ((useFastWeight && (last[i] + DEFAULT_WEIGHT_TIME_FAST) < now))) {
       lcd.setCursor(0, 1);
 
       String weightName = getName(i);
       float value = getValue(scales[i]);
-      
 
-      if ((value > (lastValue + 50)) || (value < (lastValue - 50))) {
+      if ((value > (lastValue[i] + 50)) || (value < (lastValue[i] - 50))) {
         useFastWeight = 1;
-        lastValue = value;
+        lastValue[i] = value;
       } else {
         useFastWeight = 0;
       }
       
-      printToSerial(value, now, weightName);
+      printToSerial(value, now, weightName, i);
 
       const int row = getRow(i);
       const int col = getCol(i);
@@ -270,7 +253,7 @@ void doWeigth() {
       
       printWeightOnLCD(value, weightName);
 
-      last = millis();
+      last[i] = millis();
     }
   }
 }
