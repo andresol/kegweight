@@ -36,7 +36,7 @@
 #define BAUD_RATE 9600
 #define KILO 1000
 #define TAP_SIZE 330
-#define KEG_WEIGHT 4000
+#define KEG_WEIGHT 5000
 #define USE_EEPROM 1
 #define btnRIGHT  0
 #define btnUP     1
@@ -218,7 +218,7 @@ void printWeightOnLCD(const float value, String weightName) {
     } else {
       char numberOfBeers[4];
       dtostrf(((value - KEG_WEIGHT) / (TAP_SIZE)), 1, 0, numberOfBeers);
-      lcd.print(weightName + weight + kilo + " (" + numberOfBeers +")");
+      lcd.print(weightName + weight + kilo + " (" + numberOfBeers +")    ");
     }
   }
   
