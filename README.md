@@ -1,7 +1,7 @@
 Kegweight
 =========
 
-Arduino + HX711 + Weight sensor + Kegerface for monitoring how much beer there is in the keg. 
+Arduino + HX711 + LCD Keypad + Weight sensor + Kegerface for monitoring how much beer there is in the keg. 
 
 ![ScreenShot](screenshot1.jpg "Arduino")
 
@@ -18,9 +18,9 @@ What you need?
 
 Important!!
 
-Before using the weight it needs to be calibrated. Calibrate by hitting the select button->Calibrate. 
+Before using the weight it needs to be calibrated. Calibrate by hitting the "select" button->Calibrate. 
 
-This step only needs to be done only one time.
+This step only needs to be done one time.
 
 GUIDE: (Needs Arduino, Arduino LCD screen, HX711, Raspberry PI/linux server and a weight).  
 1. Install the Weight.ino on a arduino. You may need to change the code from line:54 to line:56 to match your arduino setup.  
@@ -31,3 +31,9 @@ GUIDE: (Needs Arduino, Arduino LCD screen, HX711, Raspberry PI/linux server and 
 6. Modify the /usr/share/nginx/html/beers.csv  
 7. sudo service weight start. Cross your fingers! It will fail. Fix the bugs and ...  
 8. Go to localhost:8080  
+
+
+TODO: 
+-Calibrate with known weight. 
+-Support for larger screens. 
+-Arduino Ethernet Shield. (So one don't need a Raspberry PI/linux server). 
