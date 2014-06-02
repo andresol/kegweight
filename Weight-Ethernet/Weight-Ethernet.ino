@@ -15,6 +15,9 @@
  * ends to +5V and ground
  * wiper to LCD VO pin (pin 3)
  */
+ 
+/* Uncomment if using ethernet shield */
+#define ETHERNET 1
 
 // include the library code:
 #include <HX711.h>
@@ -24,8 +27,14 @@
 #include <EEPROMex.h>
 #include <EEPROMVar.h> //https://github.com/thijse/Arduino-Libraries/tree/master/EEPROMEx
 
-#define DEBUG 0
-#define TEST 0
+#if defined(ETHERNET)
+  #include <SPI.h>
+  #include <Ethernet.h>
+#endif
+
+//#define DEBUG 0
+//#define TEST 0
+
 
 #define WEIGHT_SENSORS 2
 #define DELAY 100
@@ -50,8 +59,18 @@
 // initialize the library with the numbers of the interface pins
 //LiquidCrystal lcd(13, 12, 8, 9, 10, 11); //DEBUG
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7); //PROD
-HX711 scales[] = {
-  HX711 (A1, A2), HX711 (A3, A4)}; //A1 = ANALOG1 = DT // A2=SCK
+
+
+
+#if defined(ETHERNET)
+  HX711 scales[] = {HX711 (A3, A4), HX711 (A5, A6)}; //A3 = ANALOG1 = DT // A4=SCK
+  byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+  IPAddress ip(192,168,1,177);
+  EthernetServer server(80);
+#else
+  HX711 scales[] = { HX711 (A1, A2), HX711 (A3, A4)}; //A3 = ANALOG1 = DT // A4=SCK
+#endif
+
 int eepromAddress[WEIGHT_SENSORS] = {0};
 
 unsigned long last[WEIGHT_SENSORS];
@@ -84,6 +103,14 @@ void setup() {
  
   lcd.begin(16, 2);
   lcd.print("Starting...");
+  
+#if defined(ETHERNET)
+    Ethernet.begin(mac, ip);
+    server.begin();
+    Serial.print("server is at ");
+    Serial.println(Ethernet.localIP());
+#endif
+
   for (int i = 0; i < WEIGHT_SENSORS; i++) {
     //scales[i].set_scale(-228.f);
     lastValue[i] = 0;
@@ -396,14 +423,68 @@ void doButtonAction(int btn) {
   }
 }
 
+void handleWebReq() {
+#if defined(ETHERNET)
+  EthernetClient client = server.available();
+  String data = String();
+  if (client) {
+    // an http request ends with a blank line
+    boolean currentLineIsBlank = true;
+    while (client.connected()) {
+      if (client.available()) {
+        char c = client.read();
+        data += c;
+        //Serial.write(c);
+        if (c == '\n' && currentLineIsBlank) {
+            Serial.print(data);
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-Type: application/json");
+            client.println("Connection: close");  // the connection will be closed after completion of the response
+            client.println();
+            client.println("{");
+            client.println("\"Weights\":[");
+            for (int i = 0; i < WEIGHT_SENSORS ; i++) {
+              client.print("{\"V");
+              client.print(i+1);
+              client.print("\": ");
+              client.print(lastValue[i]);
+               if (i < WEIGHT_SENSORS - 1) {
+                client.println("},");
+            } else {
+                client.println("}");
+            }
+          }
+          client.println("]");
+          client.println("}");
+          break;
+        }
+        if (c == '\n') {
+          // you're starting a new line
+          currentLineIsBlank = true;
+        } 
+        else if (c != '\r') {
+          // you've gotten a character on the current lin
+          currentLineIsBlank = false;
+        }
+      }
+    }
+    // give the web browser time to receive the data
+    delay(1);
+    // close the connection:
+    client.stop();
+    Serial.println("client disonnected");
+  }
+#endif
+}
+
 void loop() {
+  handleWebReq();
   int btn = getButtonPressed();
   doButtonAction(btn);
   doWeigth();
   printMenu();
   delay(2);
 }
-
 
 
 
