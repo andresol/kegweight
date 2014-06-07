@@ -85,7 +85,6 @@ void setup() {
   lcd.begin(16, 2);
   lcd.print("Starting...");
   for (int i = 0; i < WEIGHT_SENSORS; i++) {
-    //scales[i].set_scale(-228.f);
     lastValue[i] = 0;
     last[i] = 0;
     lastPrint[i] = 0;
@@ -94,7 +93,7 @@ void setup() {
     delay(DELAY);
     if (USE_EEPROM) { //Firstime use please use calibrate.
       double value = EEPROM.readDouble(eepromAddress[i]);
-      scales[i].set_offset(value);//TODO: use eeprom. 
+      scales[i].set_offset(value);
     } 
   }
   lcd.clear();
