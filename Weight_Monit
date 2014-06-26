@@ -1,0 +1,6 @@
+check process weight with pidfile /var/run/Weight.pid
+   group root
+   group root
+   start program = "/etc/init.d/weight start"
+   stop program = "/etc/init.d/weight stop"
+   if 5 restarts with 5 cycles then timeout
