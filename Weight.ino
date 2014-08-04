@@ -47,13 +47,33 @@
 
 #define BUTTON_PIN   0
 
+typedef struct {
+  int eepromAddress;
+  HX711 scale;
+  unsigned long last;
+  unsigned long lastPrint;
+  float lastValue;
+} 
+Scale;
+
+typedef struct {
+  char* name;
+  unsigned int index;
+} 
+MenuItem;
+
+
 // initialize the library with the numbers of the interface pins
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7); //PROD
-HX711 scales[] = {HX711 (A1, A2), HX711 (A3, A4)}; //A1 = ANALOG1 = DT // A2=SCK
-int eepromAddress[WEIGHT_SENSORS] = {0,1};
 
-unsigned long last[WEIGHT_SENSORS];
-unsigned long lastPrint[WEIGHT_SENSORS];
+Scale scale1 = {
+  0, HX711 (A1, A2), 0, 0, 0};
+Scale scale2 = {
+  1, HX711 (A3, A4), 0, 0, 0};
+
+Scale scales[] = {
+  scale1, scale2};
+
 const String kilo = "kg";
 
 // KEY VARIABLES
@@ -71,7 +91,18 @@ unsigned int useKegWeight = 0;
 
 //MENU
 char* EMPTY = "                ";
-char* menu[] = {"Calibrate" ,"Tare", "+Beersize", "Keg Weight"};
+char* beerSizes[] = {
+  "0.33", "0.5"};
+MenuItem menu[] = {
+  {
+    "Calibrate", 0  }
+  , {
+    "Tare", 1  }
+  , {
+    "Beersize", 2  }
+  , {
+    "Keg Weight", 3  }
+};
 unsigned int lastItem = 3;
 unsigned int menuMarker = 0;
 
@@ -80,19 +111,19 @@ unsigned int printGUI = 0;
 
 void setup() {
   Serial.begin(BAUD_RATE);
- 
+
   lcd.begin(16, 2);
   lcd.print("Starting...");
   for (int i = 0; i < WEIGHT_SENSORS; i++) {
-    lastValue[i] = 0;
-    last[i] = 0;
-    lastPrint[i] = 0;
-    scales[i].set_scale(228.f);
-    scales[i].tare();
+    scales[i].lastValue = 0;
+    scales[i].last = 0;
+    scales[i].lastPrint = 0;
+    scales[i].scale.set_scale(228.f);
+    scales[i].scale.tare();
     delay(DELAY);
     if (USE_EEPROM) { //Firstime use please use calibrate.
-      double value = EEPROM.readDouble(eepromAddress[i]);
-      scales[i].set_offset(value);
+      double value = EEPROM.readDouble(scales[i].eepromAddress);
+      scales[i].scale.set_offset(value);
     } 
   }
   lcd.clear();
@@ -119,10 +150,12 @@ int getButtonPressed() {
   unsigned long now = millis();
   if (lcd_key == btnNONE) {
     return btnNONE;
-  } else if (millisPressedKey == 0 && lcd_key != btnNONE) {
+  } 
+  else if (millisPressedKey == 0 && lcd_key != btnNONE) {
     millisPressedKey = now;
     return btnNONE;
-  } else if (((millisPressedKey + 10) < now) && (debounceTime < now)) {
+  } 
+  else if (((millisPressedKey + 10) < now) && (debounceTime < now)) {
     int lcd_key_confirm = read_LCD_buttons();
     debounceTime = now + 300;
     millisPressedKey = 0;
@@ -130,11 +163,13 @@ int getButtonPressed() {
       //Serial.println(lcd_key);
       buttonPressed = 0;
       return lcd_key;
-    } else {
+    } 
+    else {
       millisPressedKey = now;
       return btnNONE;
     }
-  } else {
+  } 
+  else {
     return btnNONE;
   }
 }
@@ -154,10 +189,10 @@ float getValue(HX711 scale) {
 }
 
 void printToSerial(const float value, const unsigned long now, String& weightName, const int i) {
-  if ((lastPrint[i] + DEFAULT_WEIGHT_PRINT_TIME) < now || ((useFastWeight && (last[i] + DEFAULT_WEIGHT_TIME_FAST) < now))) {
+  if ((scales[i].lastPrint + DEFAULT_WEIGHT_PRINT_TIME) < now || ((useFastWeight && (scales[i].last + DEFAULT_WEIGHT_TIME_FAST) < now))) {
     Serial.print(weightName);
     Serial.println(value, 1);
-    lastPrint[i] = now;
+    scales[i].lastPrint = now;
   }
 }
 
@@ -182,17 +217,21 @@ void getWeight(const float value, char* buffer) {
   if (weight > KILO * 10 || (KILO * -10) < weight) {
     if (WEIGHT_SENSORS > 2) {
       decimals = 1; 
-    } else {
+    } 
+    else {
       if (weight < 0) {
         decimals = 2; 
-      } else {
+      } 
+      else {
         decimals = 3; 
       }
     }
-  } else {
+  } 
+  else {
     if (WEIGHT_SENSORS > 2) {
       decimals = 0; 
-    } else {
+    } 
+    else {
       decimals = 2;
     }
   }
@@ -209,7 +248,8 @@ void printWeightOnLCD(const float value, String weightName) {
   //lcd.clear();
   if (WEIGHT_SENSORS > 2) {
     lcd.print(weight + kilo);
-  } else {
+  } 
+  else {
     if (WEIGHT_SENSORS == 1) {
       lcd.print(weightName + weight + kilo + "   ");
       lcd.setCursor(0, 1);
@@ -217,45 +257,47 @@ void printWeightOnLCD(const float value, String weightName) {
       char numberOfBeers[4];
       dtostrf(((value - KEG_WEIGHT) / (TAP_SIZE)), 1, 0, numberOfBeers);
       lcd.print(beers + numberOfBeers + " (0.33)");
-    } else {
+    } 
+    else {
       char numberOfBeers[4];
       dtostrf(((value - KEG_WEIGHT) / (TAP_SIZE)), 1, 0, numberOfBeers);
       lcd.print(weightName + weight + kilo + " (" + numberOfBeers +")    ");
     }
   }
-  
+
   delete weight;
 }
 
 void doWeigth() {
-   if (printGUI){
+  if (printGUI){
     return;
   }
   unsigned long now = millis();
-  
-    for (int i = 0; i < WEIGHT_SENSORS; i++) {
-      if (((last[i] + DEFAULT_WEIGHT_TIME) < now) || ((useFastWeight && (last[i] + DEFAULT_WEIGHT_TIME_FAST) < now))) {
+
+  for (int i = 0; i < WEIGHT_SENSORS; i++) {
+    if (((scales[i].last + DEFAULT_WEIGHT_TIME) < now) || ((useFastWeight && (scales[i].last + DEFAULT_WEIGHT_TIME_FAST) < now))) {
       lcd.setCursor(0, 1);
 
       String weightName = getName(i);
-      float value = getValue(scales[i]);
+      float value = getValue(scales[i].scale);
 
-      if ((value > (lastValue[i] + 50)) || (value < (lastValue[i] - 50))) {
+      if ((value > (scales[i].lastValue + 50)) || (value < (scales[i].lastValue - 50))) {
         useFastWeight = 1;
-        lastValue[i] = value;
-      } else {
+        scales[i].lastValue = value;
+      } 
+      else {
         useFastWeight = 0;
       }
-      
+
       printToSerial(value, now, weightName, i);
 
       const int row = getRow(i);
       const int col = getCol(i);
       lcd.setCursor(col, row);
-      
+
       printWeightOnLCD(value, weightName);
 
-      last[i] = millis();
+      scales[i].last = millis();
     }
   }
 }
@@ -268,7 +310,8 @@ void printMenuMarker(int up) {
     lcd.print(" ");
     lcd.setCursor(0, 1);
     lcd.print(">");
-  } else {
+  } 
+  else {
     lcd.setCursor(0, 0);
     lcd.print(">");
     lcd.setCursor(0, 1);
@@ -277,10 +320,10 @@ void printMenuMarker(int up) {
 }
 
 void printMenuItem(char* &item) {
-   char textItem[50];
-   strcpy(textItem, item);
-   strcat(textItem, EMPTY);
-   lcd.print(textItem);
+  char textItem[50];
+  strcpy(textItem, item);
+  strcat(textItem, EMPTY);
+  lcd.print(textItem);
 }
 
 void printMenu() {
@@ -291,19 +334,21 @@ void printMenu() {
   printMenuMarker(up);
   if (!up) {
     lcd.setCursor(1, 0);
-    printMenuItem(menu[menuMarker]);
+    printMenuItem(menu[menuMarker].name);
     if (menuMarker < lastItem) {
       lcd.setCursor(1, 1);
-      printMenuItem(menu[menuMarker + 1]);
-    } else {
+      printMenuItem(menu[menuMarker + 1].name);
+    } 
+    else {
       lcd.setCursor(1, 1);
       lcd.print(EMPTY);
     }
-  } else {
+  } 
+  else {
     lcd.setCursor(1, 0);
-    printMenuItem(menu[menuMarker - 1]);
+    printMenuItem(menu[menuMarker - 1].name);
     lcd.setCursor(1, 1);
-    printMenuItem(menu[menuMarker]);
+    printMenuItem(menu[menuMarker].name);
   }
 }
 
@@ -312,21 +357,22 @@ void doTare() {
   lcd.setCursor(0, 1);
   lcd.print("Tare all weights");
   for (int i = 0; i < WEIGHT_SENSORS; i++) {
-    scales[i].tare();
+    scales[i].scale.tare();
     delay(DELAY);
   }
   lcd.print("Done tare...");
-  delay(DELAY * 2);
+  delay(DELAY * 4);
 }
 
 void kegWeight() {
-    useKegWeight ^= 1 << 0;
-    if (useKegWeight == 0) {
-        lcd.print("Keg is not removed");
-    } else {
-        lcd.print("Keg is removed");
-    }
-    delay(DELAY * 2);
+  useKegWeight ^= 1 << 0;
+  if (useKegWeight == 0) {
+    lcd.print("Keg is not removed");
+  } 
+  else {
+    lcd.print("Keg is removed");
+  }
+  delay(DELAY * 4);
 }
 
 void doCalibrate() {  
@@ -337,28 +383,28 @@ void doCalibrate() {
   lcd.print("Please clear all.");
   delay(4000);
   for (int i = 0; i < WEIGHT_SENSORS; i++) {
-    scales[i].tare();
-    double sum = scales[i].read_average(10);
+    scales[i].scale.tare();
+    double sum = scales[i].scale.read_average(10);
 #if defined(DEBUG)
     Serial.print("Offset is");
     Serial.println(sum);
 #endif
-    EEPROM.writeDouble(eepromAddress[i], sum);
- 
+    EEPROM.writeDouble(scales[i].eepromAddress, sum);
+
   }
 }
 
 void doSelect(int value) {
   switch (value) {
   case 0:
-     doCalibrate();
-     break;
+    doCalibrate();
+    break;
   case 1:
     doTare();
-  break;
-    case 3:
+    break;
+  case 3:
     kegWeight();
-  break;
+    break;
   default:
     break;
   }
@@ -367,53 +413,62 @@ void doSelect(int value) {
   lcd.clear();
 }
 
+void doRight() {
+  if (printGUI) {} 
+  else {
+    lcd.clear();
+    printGUI = 1;
+  }
+}
+
+void doSelect() {
+  if (printGUI) {
+    doSelect(menuMarker);
+  }
+}
+
 void doButtonAction(int btn) {
   if (btn != btnNONE) {
 #if defined(DEBUG)
     Serial.println(btn);
 #endif
-
-   switch (btn) {
+    switch (btn) {
     case btnRIGHT: {
-      if (printGUI) {
-        
-      } else {
+        doRight();
+        break;
+      } case btnSELECT: {
+        doSelect();
+        break;
+      } case btnLEFT: {
+        if (printGUI) {
           lcd.clear();
-          printGUI = 1;
-       }
-        break;
-    }
-    case btnSELECT: {
-       if (printGUI) {
-         doSelect(menuMarker);
-       }
+          printGUI = 0;
+        } 
+        else {
+
+        }
         break;
       }
-    case btnLEFT: {
-      if (printGUI) {
-         lcd.clear();
-         printGUI = 0;
-      } else {
-         
-       }
+    case btnUP: 
+      {
+        if (menuMarker == 0) {
+          menuMarker = lastItem;
+        } 
+        else {
+          menuMarker = menuMarker - 1;
+        }
         break;
       }
-    case btnUP: {
-       if (menuMarker == 0) {
-             menuMarker = lastItem;
-       } else {
-             menuMarker = menuMarker - 1;
-       }
-       break;
-      }
-    case btnDOWN: {
-         if (printGUI) {
-           if (menuMarker >= lastItem) {
-             menuMarker = 0;
-           } else {
-             menuMarker = menuMarker + 1;
-           }
-         }
+    case btnDOWN: 
+      {
+        if (printGUI) {
+          if (menuMarker >= lastItem) {
+            menuMarker = 0;
+          } 
+          else {
+            menuMarker = menuMarker + 1;
+          }
+        }
         break;
       }
     case btnNONE:
@@ -421,12 +476,12 @@ void doButtonAction(int btn) {
         break;
       }
     }
-    #if defined(DEBUG)
+#if defined(DEBUG)
     Serial.print("MenuMarker:");
     Serial.println(menuMarker);
     Serial.print("useKegWeight:");
     Serial.println(useKegWeight);
-    #endif
+#endif
   }
 }
 
@@ -437,7 +492,6 @@ void loop() {
   printMenu();
   delay(2);
 }
-
 
 
 
