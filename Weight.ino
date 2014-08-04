@@ -71,8 +71,8 @@ unsigned int useKegWeight = 0;
 
 //MENU
 char* EMPTY = "                ";
-char* menu[] = {"Calibrate       " ,"Tare           ", "Beersize       ", "Keg Weight      "};
-unsigned int lastItem = 4;
+char* menu[] = {"Calibrate" ,"Tare", "+Beersize", "Keg Weight"};
+unsigned int lastItem = 3;
 unsigned int menuMarker = 0;
 
 //GUI VARIABLES
@@ -113,7 +113,6 @@ int read_LCD_buttons() {
   if (adc_key_in < 850)  return btnSELECT;
   return btnNONE;  // when all others fail, return this...
 }
-
 
 int getButtonPressed() {
   lcd_key = read_LCD_buttons();  // read the buttons
@@ -277,6 +276,13 @@ void printMenuMarker(int up) {
   }
 }
 
+void printMenuItem(char* &item) {
+   char textItem[50];
+   strcpy(textItem, item);
+   strcat(textItem, EMPTY);
+   lcd.print(textItem);
+}
+
 void printMenu() {
   if (!printGUI){
     return;
@@ -285,21 +291,20 @@ void printMenu() {
   printMenuMarker(up);
   if (!up) {
     lcd.setCursor(1, 0);
-    lcd.print(menu[menuMarker]);
+    printMenuItem(menu[menuMarker]);
     if (menuMarker < lastItem) {
       lcd.setCursor(1, 1);
-      lcd.print(menu[menuMarker + 1]);
+      printMenuItem(menu[menuMarker + 1]);
     } else {
       lcd.setCursor(1, 1);
       lcd.print(EMPTY);
     }
   } else {
     lcd.setCursor(1, 0);
-    lcd.print(menu[menuMarker - 1]);
+    printMenuItem(menu[menuMarker - 1]);
     lcd.setCursor(1, 1);
-    lcd.print(menu[menuMarker]);
+    printMenuItem(menu[menuMarker]);
   }
-  
 }
 
 void doTare() {
