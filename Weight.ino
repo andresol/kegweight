@@ -73,7 +73,7 @@ unsigned int useFastWeight = 0;
 //MENU
 char* EMPTY = "                ";
 char* menu[] = {"Calibrate       " ,"Tare           ", "Beersize       "};
-unsigned int lastItem = 1;
+unsigned int lastItem = sizeof(menu);
 unsigned int menuMarker = 0;
 
 //GUI VARIABLES
@@ -325,7 +325,6 @@ void doCalibrate() {
 #if defined(DEBUG)
     Serial.print("Offset is");
     Serial.println(sum);
-    //TODO: Safe into eeprom. http://playground.arduino.cc/Code/EEPROMex
 #endif
     EEPROM.writeDouble(eepromAddress[i], sum);
     delay(DELAY);
