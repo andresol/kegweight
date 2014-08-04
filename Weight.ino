@@ -48,10 +48,8 @@
 #define BUTTON_PIN   0
 
 // initialize the library with the numbers of the interface pins
-//LiquidCrystal lcd(13, 12, 8, 9, 10, 11); //DEBUG
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7); //PROD
-HX711 scales[] = {
-  HX711 (A1, A2), HX711 (A3, A4)}; //A1 = ANALOG1 = DT // A2=SCK
+HX711 scales[] = {HX711 (A1, A2), HX711 (A3, A4)}; //A1 = ANALOG1 = DT // A2=SCK
 int eepromAddress[WEIGHT_SENSORS] = {0};
 
 unsigned long last[WEIGHT_SENSORS];
@@ -69,11 +67,12 @@ unsigned long debounceTime = 0;
 // WEIGHT VARIABLES
 float lastValue[WEIGHT_SENSORS];
 unsigned int useFastWeight = 0;
+unsigned int useKegWeight = 0;
 
 //MENU
 char* EMPTY = "                ";
-char* menu[] = {"Calibrate       " ,"Tare           ", "Beersize       "};
-unsigned int lastItem = sizeof(menu);
+char* menu[] = {"Calibrate       " ,"Tare           ", "Beersize       ", "Keg Weight      "};
+unsigned int lastItem = 4;
 unsigned int menuMarker = 0;
 
 //GUI VARIABLES
@@ -177,11 +176,15 @@ int getCol(const int i) {
 
 void getWeight(const float value, char* buffer) {
   int decimals = 0;
-  if (value > KILO * 10 || (KILO * -10) < value) {
+  float weight = value;
+  if (useKegWeight) {
+    weight -= KEG_WEIGHT;
+  }
+  if (weight > KILO * 10 || (KILO * -10) < weight) {
     if (WEIGHT_SENSORS > 2) {
       decimals = 1; 
     } else {
-      if (value < 0) {
+      if (weight < 0) {
         decimals = 2; 
       } else {
         decimals = 3; 
@@ -194,7 +197,8 @@ void getWeight(const float value, char* buffer) {
       decimals = 2;
     }
   }
-  dtostrf((value / KILO), 1, decimals, buffer);
+  dtostrf((weight / KILO), 1, decimals, buffer);
+
 }
 
 void printWeightOnLCD(const float value, String weightName) {
@@ -307,9 +311,17 @@ void doTare() {
     delay(DELAY);
   }
   lcd.print("Done tare...");
-  delay(DELAY * 3);
-  printGUI = 0;
-  lcd.clear();
+  delay(DELAY * 2);
+}
+
+void kegWeight() {
+    useKegWeight ^= 1 << 0;
+    if (useKegWeight == 0) {
+        lcd.print("Keg is not removed");
+    } else {
+        lcd.print("Keg is removed");
+    }
+    delay(DELAY * 2);
 }
 
 void doCalibrate() {  
@@ -327,16 +339,33 @@ void doCalibrate() {
     Serial.println(sum);
 #endif
     EEPROM.writeDouble(eepromAddress[i], sum);
-    delay(DELAY);
-    printGUI = 0;
-    lcd.clear();
+ 
   }
+}
+
+void doSelect(int value) {
+  switch (value) {
+  case 0:
+     doCalibrate();
+     break;
+  case 1:
+    doTare();
+  break;
+    case 3:
+    kegWeight();
+  break;
+  default:
+    break;
+  }
+  delay(DELAY);
+  printGUI = 0;
+  lcd.clear();
 }
 
 void doButtonAction(int btn) {
   if (btn != btnNONE) {
 #if defined(DEBUG)
-    Serial.print(btn);
+    Serial.println(btn);
 #endif
 
    switch (btn) {
@@ -351,11 +380,7 @@ void doButtonAction(int btn) {
     }
     case btnSELECT: {
        if (printGUI) {
-           if (menuMarker == 1) {
-             doTare(); 
-           } else if (menuMarker == 0) {
-             doCalibrate();
-           }
+         doSelect(menuMarker);
        }
         break;
       }
@@ -391,6 +416,12 @@ void doButtonAction(int btn) {
         break;
       }
     }
+    #if defined(DEBUG)
+    Serial.print("MenuMarker:");
+    Serial.println(menuMarker);
+    Serial.print("useKegWeight:");
+    Serial.println(useKegWeight);
+    #endif
   }
 }
 
