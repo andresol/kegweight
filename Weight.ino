@@ -56,23 +56,17 @@ typedef struct {
 } 
 Scale;
 
-typedef struct {
+typedef struct MenuItem {
   char* name;
-  unsigned int index;
-} 
-MenuItem;
-
+};
 
 // initialize the library with the numbers of the interface pins
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7); //PROD
 
-Scale scale1 = {
-  0, HX711 (A1, A2), 0, 0, 0};
-Scale scale2 = {
-  1, HX711 (A3, A4), 0, 0, 0};
+Scale scale1 = {0, HX711 (A1, A2), 0, 0, 0};
+Scale scale2 = {1, HX711 (A3, A4), 0, 0, 0};
 
-Scale scales[] = {
-  scale1, scale2};
+Scale scales[] = { scale1, scale2};
 
 const String kilo = "kg";
 
@@ -92,7 +86,7 @@ unsigned int useKegWeight = 0;
 //MENU
 char* EMPTY = "                ";
 char* beerSizes[] = {"0.33", "0.5"};
-MenuItem menu[] = {{"Calibrate", 0} , {"Tare", 1  } , {"Beersize", 2  } , {"Keg Weight", 3  }};
+MenuItem menu[] = {{"Calibrate"} , {"Tare"} , {"Beersize"} , {"Keg Weight"}};
 unsigned int lastItem = 3;
 unsigned int menuMarker = 0;
 unsigned int level = 0;
@@ -317,29 +311,39 @@ void printMenuItem(char* &item) {
   lcd.print(textItem);
 }
 
+void printMainMenu(int up) {
+    if (!up) {
+    lcd.setCursor(1, 0);
+    printMenuItem(menu[menuMarker].name);
+    if (menuMarker < lastItem) {
+      lcd.setCursor(1, 1);
+      printMenuItem(menu[menuMarker + 1].name);
+    } else {
+      lcd.setCursor(1, 1);
+      lcd.print(EMPTY);
+    }
+    } else {
+      lcd.setCursor(1, 0);
+      printMenuItem(menu[menuMarker - 1].name);
+      lcd.setCursor(1, 1);
+      printMenuItem(menu[menuMarker].name);
+    }
+}
+
+void printSubMenu(const int up) {
+
+}
+
 void printMenu() {
   if (!printGUI){
     return;
   }
   int up = menuMarker % 2;
   printMenuMarker(up);
-  if (!up) {
-    lcd.setCursor(1, 0);
-    printMenuItem(menu[menuMarker].name);
-    if (menuMarker < lastItem) {
-      lcd.setCursor(1, 1);
-      printMenuItem(menu[menuMarker + 1].name);
-    } 
-    else {
-      lcd.setCursor(1, 1);
-      lcd.print(EMPTY);
-    }
-  } 
-  else {
-    lcd.setCursor(1, 0);
-    printMenuItem(menu[menuMarker - 1].name);
-    lcd.setCursor(1, 1);
-    printMenuItem(menu[menuMarker].name);
+  if (level == 0) {
+    printMainMenu(up);
+  } else {
+    printSubMenu(up);
   }
 }
 
