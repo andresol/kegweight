@@ -91,20 +91,11 @@ unsigned int useKegWeight = 0;
 
 //MENU
 char* EMPTY = "                ";
-char* beerSizes[] = {
-  "0.33", "0.5"};
-MenuItem menu[] = {
-  {
-    "Calibrate", 0  }
-  , {
-    "Tare", 1  }
-  , {
-    "Beersize", 2  }
-  , {
-    "Keg Weight", 3  }
-};
+char* beerSizes[] = {"0.33", "0.5"};
+MenuItem menu[] = {{"Calibrate", 0} , {"Tare", 1  } , {"Beersize", 2  } , {"Keg Weight", 3  }};
 unsigned int lastItem = 3;
 unsigned int menuMarker = 0;
+unsigned int level = 0;
 
 //GUI VARIABLES
 unsigned int printGUI = 0;
@@ -390,17 +381,25 @@ void doCalibrate() {
     Serial.println(sum);
 #endif
     EEPROM.writeDouble(scales[i].eepromAddress, sum);
-
   }
 }
 
-void doSelect(int value) {
+void beerSize() {
+  if (level > 0) {
+   //TODO:
+  }
+}
+
+void doSelect(const int value) {
   switch (value) {
   case 0:
     doCalibrate();
     break;
   case 1:
     doTare();
+    break;
+  case 2:
+    beerSize();
     break;
   case 3:
     kegWeight();
@@ -414,7 +413,9 @@ void doSelect(int value) {
 }
 
 void doRight() {
-  if (printGUI) {} 
+  if (printGUI) {
+    level++;
+  } 
   else {
     lcd.clear();
     printGUI = 1;
@@ -427,6 +428,35 @@ void doSelect() {
   }
 }
 
+void doLeft() {
+  if (printGUI) {
+    if (level > 0) {
+      level--;
+    } else {
+      lcd.clear();
+      printGUI = 0;
+    }
+   } 
+}
+
+void doUp() {
+  if (menuMarker == 0) {
+    menuMarker = lastItem;
+   } else {
+    menuMarker--;
+   }
+}
+
+void doDown() {
+ if (printGUI) {
+   if (menuMarker >= lastItem) {
+      menuMarker = 0;
+    } else {
+      menuMarker++;
+    }
+  }
+}
+
 void doButtonAction(int btn) {
   if (btn != btnNONE) {
 #if defined(DEBUG)
@@ -434,45 +464,16 @@ void doButtonAction(int btn) {
 #endif
     switch (btn) {
     case btnRIGHT: {
-        doRight();
-        break;
+        doRight(); break;
       } case btnSELECT: {
-        doSelect();
-        break;
+        doSelect(); break;
       } case btnLEFT: {
-        if (printGUI) {
-          lcd.clear();
-          printGUI = 0;
-        } 
-        else {
-
-        }
-        break;
-      }
-    case btnUP: 
-      {
-        if (menuMarker == 0) {
-          menuMarker = lastItem;
-        } 
-        else {
-          menuMarker = menuMarker - 1;
-        }
-        break;
-      }
-    case btnDOWN: 
-      {
-        if (printGUI) {
-          if (menuMarker >= lastItem) {
-            menuMarker = 0;
-          } 
-          else {
-            menuMarker = menuMarker + 1;
-          }
-        }
-        break;
-      }
-    case btnNONE:
-      {
+        doLeft(); break;
+      } case btnUP: {
+        doUp(); break;
+      } case btnDOWN: { 
+        doDown(); break;
+      } case btnNONE: {
         break;
       }
     }
