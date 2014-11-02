@@ -85,7 +85,7 @@ unsigned int useKegWeight = 0;
 
 //MENU
 char* EMPTY = "                ";
-char* beerSizes[] = {"0.33", "0.5"};
+MenuItem beerSizes[] = {{"0.33"}, {"0.5"}};
 MenuItem menu[] = {{"Calibrate"} , {"Tare"} , {"Beersize"} , {"Keg Weight"}};
 unsigned int lastItem = 3;
 unsigned int menuMarker = 0;
@@ -96,7 +96,6 @@ unsigned int printGUI = 0;
 
 void setup() {
   Serial.begin(BAUD_RATE);
-
   lcd.begin(16, 2);
   lcd.print("Starting...");
   for (int i = 0; i < WEIGHT_SENSORS; i++) {
